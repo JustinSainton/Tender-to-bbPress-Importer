@@ -50,12 +50,32 @@ class WP_Tender_API {
 		return apply_filters( 'wp_tender_api_base', $url );
 	}
 
+	public static function get_users( $args = array() ) {
+		return self::_request( 'users', $args );
+	}
+
 	public static function get_discussions( $args = array() ) {
-		return self::_request( '/discussions', $args );
+		return self::_request( 'discussions', $args );
 	}
 
-	private static function _request( $endpoint = '/', $args = array() ) {
-
-		return wp_remote_get( esc_url_raw( path_join( self::get_tender_base(), $endpoint ) ), array( 'body' => json_encode( $args ) ) );
+	public static function get_categories( $args = array() ) {
+		return self::_request( 'categories', $args );
 	}
+
+	public static function _request( $endpoint = '/', $args = array() ) {
+
+		$args      = json_encode( $args );
+		$response = wp_remote_get( esc_url_raw( path_join( self::get_tender_base(), $endpoint ) ), array( 'body' => $args ) );
+
+		if ( 200 == wp_remote_retrieve_response_code( $response ) ) {
+			$response = wp_remote_retrieve_body( $response );
+			$response = json_decode( $response );
+		} else {
+			$response = false;
+		}
+
+		return $response;
+	}
+
+
 }
