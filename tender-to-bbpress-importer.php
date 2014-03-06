@@ -125,12 +125,28 @@ class bbPress_Tender_Importer {
 		add_filter( 'http_request_args', array( self::$instance->api, 'http_request_headers' ), 10, 2 );
 	}
 
-	public static function insert_topic() {
-		return bbp_insert_reply( $reply_data, $reply_meta );
+	public static function insert_topic( array $data ) {
+		$topic_data['post_parent']  = self::find_forum( $data ); // forum ID
+		$topic_data['post_author']  = self::find_user( $data ),
+		$topic_data['post_content'] = '';
+		$topic_data['post_title']   = '';
+
+		$topic_meta['forum_id'] = $topic_data['post_parent'];
+
+		return bbp_insert_topic( $topic_data, $topic_meta );
 	}
 
-	public static function insert_reply() {
-		return bp_insert_topic( $topic_data, $topic_meta );
+	public static function insert_reply( array $data ) {
+
+		$reply_data['post_parent']  = $data['topic_ID']; // topic ID
+		$reply_data['post_author']  = self::find_user( $data ),
+		$reply_data['post_content'] = '';
+		$reply_data['post_title']   = '';
+
+		$topic_meta['topic_id'] = $reply_data['post_parent'];
+		$topic_meta['forum_id'] = $data['forum_id'];
+
+		return bp_insert_reply( $reply_data, $reply_meta );
 	}
 
 	public static function maybe_set_as_private() {
@@ -152,6 +168,9 @@ class bbPress_Tender_Importer {
 		update_post_meta( $topic_id, '_bbps_topic_status', '2' );
 	}
 
+	public static function find_user( $data ) {
+		$default = bbp_get_current_user_id();
+	}
 
 
 }
