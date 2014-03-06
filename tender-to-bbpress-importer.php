@@ -121,10 +121,35 @@ class bbPress_Tender_Importer {
 	}
 
 	public static function setup_filters() {
-
 		/* Sets required headers for Tender HTTP requests */
 		add_filter( 'http_request_args', array( self::$instance->api, 'http_request_headers' ), 10, 2 );
+	}
 
+	public static function insert_topic() {
+		
+	}
+
+	public static function insert_reply() {
+		
+	}
+
+	public static function maybe_set_as_private() {
+		if ( ! class_exists( 'BBP_Private_Replies' ) ) {
+			return;
+		}
+
+		/* Cause private topics to be marked as private */
+		update_post_meta( $reply_id, '_bbp_reply_is_private', '1' );
+	}
+
+	public static function maybe_set_as_resolved() {
+
+		if ( ! function_exists( 'edd_bbp_d_setup' ) ) {
+			return;
+		}
+		
+		/* Cause all topics to be marked as resolved */
+		update_post_meta( $topic_id, '_bbps_topic_status', '2' );
 	}
 
 }
