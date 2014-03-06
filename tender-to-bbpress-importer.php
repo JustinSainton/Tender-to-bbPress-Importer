@@ -135,7 +135,7 @@ class bbPress_Tender_Importer {
 		$topic_data = $topic_meta = array();
 
 		$topic_data['post_parent']  = self::find_forum( $data['link'] ); // forum ID
-		$topic_data['post_author']  = self::find_user( $data['email'] ),
+		$topic_data['post_author']  = self::find_user( $data['email'] );
 		$topic_data['post_content'] = ''; // Will circle back to this.
 		$topic_data['post_title']   = $data['title'];
 
@@ -148,7 +148,7 @@ class bbPress_Tender_Importer {
 		$reply_data = $reply_meta = array(); 
 
 		$reply_data['post_parent']  = $data['topic_id']; // topic ID
-		$reply_data['post_author']  = self::find_user( $data['email'] ),
+		$reply_data['post_author']  = self::find_user( $data['email'] );
 		$reply_data['post_content'] = $data['content'];
 		$reply_data['post_title']   = $data['title'];
 
@@ -214,14 +214,15 @@ class bbPress_Tender_Importer {
 		}
 
 		$i = 1;
+
 		foreach ( $response->discussions as $discussions ) {
 			self::process_discussion( $discussion, $i );
+			$i++;
 		}
 	}
 
 	/* TODO: bbPress treats Topics as, basically, Reply #1, while Tender treats them as, well, replies.  Accommodate that. */
-	public static function process_discussion( $discussion, incrementor ) {
-
+	public static function process_discussion( $discussion, $incrementor ) {
 		$data = array();
 
 		$data['link']  = esc_url_raw( $discussion->html_href );
