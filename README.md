@@ -15,3 +15,5 @@ To help with some of the concepts - "Categories" are Forums, "Discussions" are T
 @todo - Would be neat on activation to grab categories and offer some mapping options.  Not going to do that this round.
 
 Supports the bbPress Private Replies and bbPress Marked as Resolved add-ons for bbPress.
+
+Uber-Mega-Super-Duper props to Mike McAlister at OkayThemes for funding the development of this. If you find it useful, be sure to give him a shout out and go buy a bunch of his work :)
