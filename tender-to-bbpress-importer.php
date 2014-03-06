@@ -126,11 +126,11 @@ class bbPress_Tender_Importer {
 	}
 
 	public static function insert_topic() {
-		
+		return bbp_insert_reply( $reply_data, $reply_meta );
 	}
 
 	public static function insert_reply() {
-		
+		return bp_insert_topic( $topic_data, $topic_meta );
 	}
 
 	public static function maybe_set_as_private() {
@@ -147,10 +147,12 @@ class bbPress_Tender_Importer {
 		if ( ! function_exists( 'edd_bbp_d_setup' ) ) {
 			return;
 		}
-		
+
 		/* Cause all topics to be marked as resolved */
 		update_post_meta( $topic_id, '_bbps_topic_status', '2' );
 	}
+
+
 
 }
 
