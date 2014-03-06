@@ -42,7 +42,7 @@ class bbPress_Tender_Importer {
 	private static $api;
 
 
-	public static function instance() {
+	public static function get_instance() {
 
 		if ( ! isset( self::$instance ) && ! ( self::$instance instanceof bbPress_Tender_Importer ) ) {
 			self::$instance = new bbPress_Tender_Importer;
@@ -82,7 +82,12 @@ class bbPress_Tender_Importer {
 	}
 
 	public static function includes() {
-		require_once EDD_PLUGIN_DIR . 'inc/tender-api-bindings.php';
+		/* Sets constants for API key and base for local work, ignored by GitHub */
+		if ( file_exists( BBP_TENDER_PLUGIN_DIR . 'inc/client.local.php' ) ) {
+			require_once BBP_TENDER_PLUGIN_DIR . 'inc/client.local.php';
+		}
+
+		require_once BBP_TENDER_PLUGIN_DIR . 'inc/tender-api-bindings.php';
 	}
 
 	public static function load_textdomain() {
@@ -115,7 +120,10 @@ class bbPress_Tender_Importer {
 	}
 
 	public static function setup_filters() {
-		
+
+		/* Sets required headers for Tender HTTP requests */
+		add_filter( 'http_request_args', array( self::$instance->api, 'http_request_headers' ) );
+
 	}
 
 }
