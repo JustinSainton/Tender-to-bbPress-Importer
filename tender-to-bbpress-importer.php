@@ -138,9 +138,9 @@ class bbPress_Tender_Importer {
 
 	public static function insert_reply( array $data ) {
 
-		$reply_data['post_parent']  = $data['topic_ID']; // topic ID
-		$reply_data['post_author']  = self::find_user( $data ),
-		$reply_data['post_content'] = '';
+		$reply_data['post_parent']  = $data['topic_id']; // topic ID
+		$reply_data['post_author']  = self::find_user( $data['email'] ),
+		$reply_data['post_content'] = $data['content'];
 		$reply_data['post_title']   = '';
 
 		$topic_meta['topic_id'] = $reply_data['post_parent'];
@@ -149,7 +149,7 @@ class bbPress_Tender_Importer {
 		return bp_insert_reply( $reply_data, $reply_meta );
 	}
 
-	public static function maybe_set_as_private() {
+	public static function maybe_set_as_private( $reply_id ) {
 		if ( ! class_exists( 'BBP_Private_Replies' ) ) {
 			return;
 		}
@@ -158,7 +158,7 @@ class bbPress_Tender_Importer {
 		update_post_meta( $reply_id, '_bbp_reply_is_private', '1' );
 	}
 
-	public static function maybe_set_as_resolved() {
+	public static function maybe_set_as_resolved( $topic_id ) {
 
 		if ( ! function_exists( 'edd_bbp_d_setup' ) ) {
 			return;
@@ -170,8 +170,52 @@ class bbPress_Tender_Importer {
 
 	public static function find_user( $data ) {
 		$default = bbp_get_current_user_id();
+
 	}
 
+	public static function find_forum( $data ) {
+
+	}
+
+	public static function process_api_response() {
+
+		$page     = isset( $_GET['page'] ) ? (string) absint( $_GET['page'] ) : '1';
+		$response = self::$instance->api->get_discussions( array( 'page' => $page ) );
+
+		if ( ! is_object( $response ) ) {
+			return false;
+		}
+
+		/* Sets options for the the total amount of discussions being processed as well as what the most discussion was. */
+		if ( '1' === $page ) {
+			$comment_id = array_pop( explode( '/', $response->discussions[0]->href ) );
+			update_option( '_bbpress_tender_import_total_count', $response->total );
+			update_option( '_bbpress_tender_import_since'      , $comment_id );
+		}
+
+		foreach ( $response->discussions as $discussions ) {
+			self::process_discussion( $discussion );
+		}
+	}
+	
+	/* TODO: bbPress treats Topics as, basically, Reply #1, while Tender treats them as, well, replies.  Accommodate that. */
+	public static function process_discussion( $discussion ) {
+
+		$data = array();
+
+		$topic_id = self::insert_topic( $data );
+		
+		self::maybe_set_as_resolved( $topic_id );
+	}
+
+	public static function admin_notice() {
+		
+		?>
+			<script type="text/javascript">
+			window.location = 'index.php?bbpress_tender_page=<?php echo absint( $page ); ?>';
+			</script>
+		<?php
+	}
 
 }
 
