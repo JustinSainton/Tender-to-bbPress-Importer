@@ -132,10 +132,12 @@ class bbPress_Tender_Importer {
 	}
 
 	public static function insert_topic( array $data ) {
-		$topic_data['post_parent']  = self::find_forum( $data ); // forum ID
-		$topic_data['post_author']  = self::find_user( $data ),
-		$topic_data['post_content'] = '';
-		$topic_data['post_title']   = '';
+		$topic_data = $topic_meta = array();
+
+		$topic_data['post_parent']  = self::find_forum( $data['link'] ); // forum ID
+		$topic_data['post_author']  = self::find_user( $data['email'] ),
+		$topic_data['post_content'] = ''; // Will circle back to this.
+		$topic_data['post_title']   = $data['title'];
 
 		$topic_meta['forum_id'] = $topic_data['post_parent'];
 
@@ -143,14 +145,15 @@ class bbPress_Tender_Importer {
 	}
 
 	public static function insert_reply( array $data ) {
+		$reply_data = $reply_meta = array(); 
 
 		$reply_data['post_parent']  = $data['topic_id']; // topic ID
 		$reply_data['post_author']  = self::find_user( $data['email'] ),
 		$reply_data['post_content'] = $data['content'];
-		$reply_data['post_title']   = '';
+		$reply_data['post_title']   = $data['title'];
 
 		$topic_meta['topic_id'] = $reply_data['post_parent'];
-		$topic_meta['forum_id'] = $data['forum_id'];
+		$topic_meta['forum_id'] = get_post_field( 'post_parent', $data['topic_id'], 'db' );
 
 		return bp_insert_reply( $reply_data, $reply_meta );
 	}
