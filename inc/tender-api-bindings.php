@@ -3,7 +3,7 @@
 /* Uses WordPress-specific HTTP APIs to access the Tender API */
 class WP_Tender_API {
 
-	public static __construct() {
+	public function __construct() {
 
 	}
 
@@ -41,7 +41,7 @@ class WP_Tender_API {
 
 		/* Likely the easiest way for folks to go, just add define( 'TENDER_API_BASE', 'URL' ); to wp-config.php */
 		if ( defined( 'TENDER_API_BASE' ) ) {
-			$token = TENDER_API_BASE;
+			$url = TENDER_API_BASE;
 		} else {
 			/* We could add a UI for this at some point...but I really hate the Settings API. */
 			$url = ''; 
@@ -51,7 +51,7 @@ class WP_Tender_API {
 	}
 
 	public static function get_discussions( $args = array() ) {
-		return self::_request( '/discussions', $args )
+		return self::_request( '/discussions', $args );
 	}
 
 	private static function _request( $endpoint = '/', $args = array() ) {

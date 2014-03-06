@@ -39,7 +39,7 @@ class bbPress_Tender_Importer {
 	 * @var Tender API The one true Tender API Object
 	 * @since 0.7
 	 */
-	private static $api;
+	private $api;
 
 
 	public static function get_instance() {
@@ -60,11 +60,6 @@ class bbPress_Tender_Importer {
 
 	public static function setup_constants() {
 
-		/* Sets constants for API key and base for local work, ignored by GitHub */
-		if ( file_exists( BBP_TENDER_PLUGIN_DIR . 'inc/client.local.php' ) ) {
-			require_once BBP_TENDER_PLUGIN_DIR . 'inc/client.local.php';
-		}
-
 		// Plugin version
 		if ( ! defined( 'BBP_TENDER_VERSION' ) ) {
 			define( 'BBP_TENDER_VERSION', '0.7' );
@@ -81,8 +76,13 @@ class bbPress_Tender_Importer {
 		}
 
 		// Plugin Root File
-		if ( ! defined( 'BBP_TENDER_FILE' ) ) {
-			define( 'BBP_TENDER_FILE', __FILE__ );
+		if ( ! defined( 'BBP_TENDER_PLUGIN_FILE' ) ) {
+			define( 'BBP_TENDER_PLUGIN_FILE', __FILE__ );
+		}
+
+		/* Sets constants for API key and base for local work, ignored by GitHub */
+		if ( file_exists( BBP_TENDER_PLUGIN_DIR . 'inc/client.local.php' ) ) {
+			require_once BBP_TENDER_PLUGIN_DIR . 'inc/client.local.php';
 		}
 
 	}
@@ -123,11 +123,11 @@ class bbPress_Tender_Importer {
 	public static function setup_filters() {
 
 		/* Sets required headers for Tender HTTP requests */
-		add_filter( 'http_request_args', array( self::$instance->api, 'http_request_headers' ) );
+		add_filter( 'http_request_args', array( self::$instance->api, 'http_request_headers' ), 10, 2 );
 
 	}
 
 }
 
 /* Get the class instance */
-add_action( 'plugins_loaded', array( 'Tender_bbPress_Importer', 'get_instance' ) );
+add_action( 'plugins_loaded', array( 'bbPress_Tender_Importer', 'get_instance' ) );
