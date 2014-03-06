@@ -142,7 +142,7 @@ class bbPress_Tender_Importer {
 
 		$topic_data['post_parent']  = self::find_forum( $data['link'] ); // forum ID
 		$topic_data['post_author']  = self::find_user( $data['email'] );
-		$topic_data['post_content'] = ''; // Will circle back to this.
+		$topic_data['post_content'] = ''; // We circle back to this in the first reply.
 		$topic_data['post_title']   = $data['title'];
 
 		$topic_meta['forum_id'] = $topic_data['post_parent'];
@@ -166,21 +166,21 @@ class bbPress_Tender_Importer {
 
 	public static function maybe_set_as_private( $reply_id ) {
 		if ( ! class_exists( 'BBP_Private_Replies' ) ) {
-			return;
+			return null;
 		}
 
 		/* Cause private topics to be marked as private */
-		update_post_meta( $reply_id, '_bbp_reply_is_private', '1' );
+		return update_post_meta( $reply_id, '_bbp_reply_is_private', '1' );
 	}
 
 	public static function maybe_set_as_resolved( $topic_id ) {
 
 		if ( ! function_exists( 'edd_bbp_d_setup' ) ) {
-			return;
+			return null;
 		}
 
 		/* Cause all topics to be marked as resolved */
-		update_post_meta( $topic_id, '_bbps_topic_status', '2' );
+		return update_post_meta( $topic_id, '_bbps_topic_status', '2' );
 	}
 
 	public static function find_user( $email ) {
@@ -200,7 +200,7 @@ class bbPress_Tender_Importer {
 	}
 
 	public static function find_forum( $link ) {
-		$bits  = explode( '/', $string );
+		$bits  = explode( '/', $link );
 		$slug  = $bits[4];
 		$forum = str_replace( '-wordpress-theme', '', $slug );
 
@@ -275,14 +275,10 @@ class bbPress_Tender_Importer {
 			return false;
 		}
 
-		$public = (bool) $response->public;
-
 		for ( $i = 0; $i < $comment_count; $i++ ) {
 
 			/* If we're on the first comment, set as the content for the topic ID and continue */
 			if ( 0 === $i ) {
-				/* TODO: check whether or not to enter filtered content, etc. */
-				/* TODO: Certainly, there is a better API for updating the topic content, etc. */
 				wp_update_post( array( 'ID' => $topic_id, 'post_content' => wp_kses_post( $response->comments[ $i ]->body ) ) );
 				continue;
 			}
@@ -304,7 +300,7 @@ class bbPress_Tender_Importer {
 
 			$reply_id = self::insert_reply( $data );
 
-			if ( ! $public ) {
+			if ( ! (bool) $response->public ) {
 				self::maybe_set_as_private( $reply_id );
 			}
 		}
