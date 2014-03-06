@@ -129,8 +129,8 @@ class bbPress_Tender_Importer {
 	}
 
 	public static function setup_actions() {
-		add_action( 'admin_notices', array( $this, 'admin_notice' ) );
-		add_action( 'shutdown'     , array( $this, 'shutdown' ) );	
+		add_action( 'admin_notices', array( self::$instance, 'admin_notice' ) );
+		add_action( 'shutdown'     , array( self::$instance, 'shutdown' ) );	
 	}
 
 	public static function setup_filters() {
@@ -311,18 +311,18 @@ class bbPress_Tender_Importer {
 		/* This variable will be what we have just done. */
 		$page = isset( $_GET['bbpress_tender_page'] ) ? $_GET['bbpress_tender_page'] : '';
 
-		$totals = get_option( '_bbpress_tender_import_total_count', $response->total );
-		$since  = get_option( '_bbpress_tender_import_since'      , $comment_id );
+		$totals = get_option( '_bbpress_tender_import_total_count' );
+		$since  = get_option( '_bbpress_tender_import_since' );
 
 		$message = '';
 
 		if ( empty( $page ) ) {
-			$message = __( 'Looks like you are running the Tender > bbPress Importer for the first time - awesome! <a href="index.php?bbpress_tender_page=1">Get started!</a>' )
+			$message = __( 'Looks like you are running the Tender > bbPress Importer for the first time - awesome! <a href="index.php?bbpress_tender_page=1">Get started!</a>' );
 		} else {
-			$message = __( 'The importer is running. There are a total of ' . number_format_i18n( absint( $totals ) ) . ' discussions to import.  We are currently working on #' . ( $page * 30 ) . '.  This page will automatically refresh for the next batch.';
+			$message = __( 'The importer is running. There are a total of ' . number_format_i18n( absint( $totals ) ) . ' discussions to import.  We are currently working on #' . ( $page * 30 ) . '.  This page will automatically refresh for the next batch.' );
 		}
 	?>
-			<div id="notice" class="error fade">
+			<div id="notice" class="updated">
 				<p><?php echo $message; ?></p>
 			</div>
 
