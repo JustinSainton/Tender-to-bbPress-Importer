@@ -159,8 +159,8 @@ class bbPress_Tender_Importer {
 		$reply_data['post_content'] = $data['content'];
 		$reply_data['post_title']   = $data['title'];
 
-		$topic_meta['topic_id'] = $reply_data['post_parent'];
-		$topic_meta['forum_id'] = get_post_field( 'post_parent', $data['topic_id'], 'db' );
+		$reply_meta['topic_id'] = $reply_data['post_parent'];
+		$reply_meta['forum_id'] = get_post_field( 'post_parent', $data['topic_id'], 'db' );
 
 		return bbp_insert_reply( $reply_data, $reply_meta );
 	}
@@ -201,7 +201,7 @@ class bbPress_Tender_Importer {
 	}
 
 	public static function find_forum( $link ) {
-		
+
 		$bits  = explode( '/', $link );
 		$slug  = $bits[4];
 		$forum = str_replace( '-wordpress-theme', '', $slug );
@@ -282,13 +282,6 @@ class bbPress_Tender_Importer {
 			if ( 0 === $i ) {
 				wp_update_post( array( 'ID' => $topic_id, 'post_content' => wp_kses_post( $response->comments[ $i ]->body ) ) );
 				continue;
-			}
-
-			/* If we've just inserted the last reply of the last discussion, and we're on the last discussion in the batch, let's redirect safely to our admin page. */
-			if ( 30 == $incrementor && $comment_count == $i ) {
-				$page = absint( $discussion->offset + 1 );
-				wp_safe_redirect( admin_url( 'index.php?bbpress_tender_page=' . $page ) );
-				exit;
 			}
 
 			/* We're not on the first comment any more, we should insert a reply */
