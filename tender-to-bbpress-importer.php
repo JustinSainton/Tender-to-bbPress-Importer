@@ -41,6 +41,12 @@ class bbPress_Tender_Importer {
 	 */
 	private $api;
 
+	/**
+	 * @var A simple user cache, so we're not hitting the DB multiple times when searching for users.
+	 * @since 0.7
+	 */
+	private $user_cache = array();
+
 
 	public static function get_instance() {
 
@@ -168,12 +174,23 @@ class bbPress_Tender_Importer {
 		update_post_meta( $topic_id, '_bbps_topic_status', '2' );
 	}
 
-	public static function find_user( $data ) {
-		$default = bbp_get_current_user_id();
+	public static function find_user( $email ) {
 
+		if ( isset( self::$user_cache[ $email ] ) ) {
+			return self::$user_cache[ $email ];
+		}
+
+		$user = get_user_by( 'email', $email );
+
+		$user_id = $user ? $user->ID : bbp_get_current_user_id();
+		
+		/* Creates a user cache, so we're not hitting the database bunches of times for the same user. */
+		self::$user_cache[ $email ] = $user_id;
+
+		return $user_id;
 	}
 
-	public static function find_forum( $data ) {
+	public static function find_forum( $link ) {
 
 	}
 
