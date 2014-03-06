@@ -201,12 +201,13 @@ class bbPress_Tender_Importer {
 	}
 
 	public static function find_forum( $link ) {
+		
 		$bits  = explode( '/', $link );
 		$slug  = $bits[4];
 		$forum = str_replace( '-wordpress-theme', '', $slug );
 
-		if ( isset( $forums_cache[ $forum ] ) ) {
-			return $forums_cache[ $forum ];
+		if ( isset( self::$forums_cache[ $forum ] ) ) {
+			return self::$forums_cache[ $forum ];
 		}
 
 		$forum_id = get_posts( 
@@ -218,8 +219,8 @@ class bbPress_Tender_Importer {
 				);
 
 		if ( ! empty( $forum_id ) ) {
-			self::$forums_cache[ $forum ] = $forum_id->ID;
-			return $forum_id->ID;
+			self::$forums_cache[ $forum ] = $forum_id[0]->ID;
+			return $forum_id[0]->ID;
 		} else {
 			return false;
 		}
