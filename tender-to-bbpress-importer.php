@@ -129,7 +129,8 @@ class bbPress_Tender_Importer {
 	}
 
 	public static function setup_actions() {
-		
+		add_action( 'admin_notices', array( $this, 'admin_notice' ) );
+		add_action( 'shutdown'     , array( $this, 'shutdown' ) );	
 	}
 
 	public static function setup_filters() {
@@ -226,7 +227,7 @@ class bbPress_Tender_Importer {
 
 	public static function process_api_response() {
 
-		$page     = isset( $_GET['page'] ) ? (string) absint( $_GET['page'] ) : '1';
+		$page     = isset( $_GET['bbpress_tender_page'] ) ? (string) absint( $_GET['bbpress_tender_page'] ) : '1';
 		$response = self::$instance->api->get_discussions( array( 'page' => $page ) );
 
 		if ( ! is_object( $response ) ) {
@@ -248,7 +249,6 @@ class bbPress_Tender_Importer {
 		}
 	}
 
-	/* TODO: bbPress treats Topics as, basically, Reply #1, while Tender treats them as, well, replies.  Accommodate that. */
 	public static function process_discussion( $discussion, $incrementor ) {
 		$data = array();
 
@@ -283,7 +283,7 @@ class bbPress_Tender_Importer {
 				continue;
 			}
 
-			/* If we've just inserted the last reply of the last discussion, let's redirect safely to our admin page. */
+			/* If we've just inserted the last reply of the last discussion, and we're on the last discussion in the batch, let's redirect safely to our admin page. */
 			if ( 30 == $incrementor && $comment_count == $i ) {
 				$page = absint( $discussion->offset + 1 );
 				wp_safe_redirect( admin_url( 'index.php?bbpress_tender_page=' . $page ) );
@@ -309,15 +309,42 @@ class bbPress_Tender_Importer {
 
 	public static function admin_notice() {
 		/* This variable will be what we have just done. */
-		$page = $_GET['bbpress_tender_page'];
+		$page = isset( $_GET['bbpress_tender_page'] ) ? $_GET['bbpress_tender_page'] : '';
 
 		$totals = get_option( '_bbpress_tender_import_total_count', $response->total );
 		$since  = get_option( '_bbpress_tender_import_since'      , $comment_id );
+
+		$message = '';
+
+		if ( empty( $page ) ) {
+			$message = __( 'Looks like you are running the Tender > bbPress Importer for the first time - awesome! <a href="index.php?bbpress_tender_page=1">Get started!</a>' )
+		} else {
+			$message = __( 'The importer is running. There are a total of ' . number_format_i18n( absint( $totals ) ) . ' discussions to import.  We are currently working on #' . ( $page * 30 ) . '.  This page will automatically refresh for the next batch.';
+		}
 	?>
+			<div id="notice" class="error fade">
+				<p><?php echo $message; ?></p>
+			</div>
+
 			<script type="text/javascript">
-				window.location = 'index.php?bbpress_tender_page=<?php echo absint( $page + 1 ); ?>';
+				//window.location = 'index.php?bbpress_tender_page=<?php echo absint( $page + 1 ); ?>';
 			</script>
 		<?php
+	}
+
+	public static function shutdown() {
+
+		/* We only want to run this on legit admin requests */
+		if ( ! is_admin() || ( defined( 'DOING_AJAX' && DOING_AJAX ) ) ) {
+			return;
+		}
+
+		/* Don't run if we don't have a numeric QV set. */
+		if ( ! isset( $_GET['bbpress_tender_page'] ) || ( isset( $_GET['bbpress_tender_page'] ) && ! is_numeric( $_GET['bbpress_tender_page'] ) ) ) {
+			return;
+		}
+
+		self::process_api_response();
 	}
 
 }
