@@ -45,13 +45,13 @@ class bbPress_Tender_Importer {
 	 * @var A simple user cache, so we're not hitting the DB multiple times when searching for users.
 	 * @since 0.7
 	 */
-	private $user_cache = array();
+	private static $user_cache = array();
 
 	/**
 	 * @var A simple user cache, so we're not hitting the DB multiple times when searching for forums.
 	 * @since 0.7
 	 */
-	private $forums_cache = array();
+	private static $forums_cache = array();
 
 
 	public static function get_instance() {
@@ -130,7 +130,7 @@ class bbPress_Tender_Importer {
 
 	public static function setup_actions() {
 		add_action( 'admin_notices', array( self::$instance, 'admin_notice' ) );
-		add_action( 'shutdown'     , array( self::$instance, 'shutdown' ) );	
+		add_action( 'admin_init'   , array( self::$instance, 'shutdown' ) );	
 	}
 
 	public static function setup_filters() {
@@ -243,7 +243,7 @@ class bbPress_Tender_Importer {
 
 		$i = 1;
 
-		foreach ( $response->discussions as $discussions ) {
+		foreach ( $response->discussions as $discussion ) {
 			self::process_discussion( $discussion, $i );
 			$i++;
 		}
@@ -269,7 +269,7 @@ class bbPress_Tender_Importer {
 		$id  = array_pop( explode( '/', $discussion->href ) );
 		$url = 'discussions/' . absint( $id ) . '/comments{?page}';
 
-		$response = self::$instance->api()->_request( $url );
+		$response = self::$instance->api->_request( $url );
 
 		if ( ! is_object( $response ) ) {
 			return false;
@@ -325,17 +325,18 @@ class bbPress_Tender_Importer {
 			<div id="notice" class="updated">
 				<p><?php echo $message; ?></p>
 			</div>
-
-			<script type="text/javascript">
-				//window.location = 'index.php?bbpress_tender_page=<?php echo absint( $page + 1 ); ?>';
-			</script>
+			<?php if ( ! empty( $page ) ) : ?>
+				<script type="text/javascript">
+					setTimeout( function() { window.location = 'index.php?bbpress_tender_page=<?php echo absint( $page + 1 ); ?>'; }, 5000 );
+				</script>
+			<?php endif; ?>
 		<?php
 	}
 
 	public static function shutdown() {
 
 		/* We only want to run this on legit admin requests */
-		if ( ! is_admin() || ( defined( 'DOING_AJAX' && DOING_AJAX ) ) ) {
+		if ( ! is_admin() || ( defined( 'DOING_AJAX' ) && DOING_AJAX ) ) {
 			return;
 		}
 
