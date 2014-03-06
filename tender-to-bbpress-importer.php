@@ -213,26 +213,85 @@ class bbPress_Tender_Importer {
 			update_option( '_bbpress_tender_import_since'      , $comment_id );
 		}
 
+		$i = 1;
 		foreach ( $response->discussions as $discussions ) {
-			self::process_discussion( $discussion );
+			self::process_discussion( $discussion, $i );
 		}
 	}
-	
+
 	/* TODO: bbPress treats Topics as, basically, Reply #1, while Tender treats them as, well, replies.  Accommodate that. */
-	public static function process_discussion( $discussion ) {
+	public static function process_discussion( $discussion, incrementor ) {
 
 		$data = array();
+
+		$data['link']  = esc_url_raw( $discussion->html_href );
+		$data['email'] = is_email( $discussion->author_email ) ? sanitize_email( $discussion->author_email ) : '';
+		$data['title'] = sanitize_text_field( $discussion->title );
 
 		$topic_id = self::insert_topic( $data );
 		
 		self::maybe_set_as_resolved( $topic_id );
+
+		self::process_replies( $topic_id, $discussion, $incrementor );
+	}
+
+	public function process_replies( $topic_id, $discussion, $incrementor ) {
+		$comment_count = $discussion->comments_count;
+
+		$id  = array_pop( explode( '/', $discussion->href ) );
+		$url = 'discussions/' . absint( $id ) . '/comments{?page}';
+
+		$response = self::$instance->api()->_request( $url );
+
+		if ( ! is_object( $response ) ) {
+			return false;
+		}
+
+		$public = (bool) $response->public;
+
+		for ( $i = 0; $i < $comment_count; $i++ ) {
+
+			/* If we're on the first comment, set as the content for the topic ID and continue */
+			if ( 0 === $i ) {
+				/* TODO: check whether or not to enter filtered content, etc. */
+				/* TODO: Certainly, there is a better API for updating the topic content, etc. */
+				wp_update_post( array( 'ID' => $topic_id, 'post_content' => wp_kses_post( $response->comments[ $i ]->body ) ) );
+				continue;
+			}
+
+			/* If we've just inserted the last reply of the last discussion, let's redirect safely to our admin page. */
+			if ( 30 == $incrementor && $comment_count == $i ) {
+				$page = absint( $discussion->offset + 1 );
+				wp_safe_redirect( admin_url( 'index.php?bbpress_tender_page=' . $page ) );
+				exit;
+			}
+
+			/* We're not on the first comment any more, we should insert a reply */
+			$data = array();
+			
+			$data['topic_id'] = $topic_id; // topic ID
+			$data['email']    = is_email( $response->comments[ $i ]->author_email ) ? sanitize_email( $response->comments[ $i ]->author_email ) : '';
+			$data['content']  = wp_kses_post( $response->comments[ $i ]->body );
+			$data['title']    = apply_filters( 'bbpress_tender_import_reply_title',  'Reply To: ' . sanitize_text_field( $response->title ), $response, $topic_id );
+
+			$reply_id = self::insert_reply( $data );
+
+			if ( ! $public ) {
+				self::maybe_set_as_private( $reply_id );
+			}
+		}
+
 	}
 
 	public static function admin_notice() {
-		
-		?>
+		/* This variable will be what we have just done. */
+		$page = $_GET['bbpress_tender_page'];
+
+		$totals = get_option( '_bbpress_tender_import_total_count', $response->total );
+		$since  = get_option( '_bbpress_tender_import_since'      , $comment_id );
+	?>
 			<script type="text/javascript">
-			window.location = 'index.php?bbpress_tender_page=<?php echo absint( $page ); ?>';
+				window.location = 'index.php?bbpress_tender_page=<?php echo absint( $page + 1 ); ?>';
 			</script>
 		<?php
 	}
