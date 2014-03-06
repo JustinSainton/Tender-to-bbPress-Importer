@@ -47,6 +47,12 @@ class bbPress_Tender_Importer {
 	 */
 	private $user_cache = array();
 
+	/**
+	 * @var A simple user cache, so we're not hitting the DB multiple times when searching for forums.
+	 * @since 0.7
+	 */
+	private $forums_cache = array();
+
 
 	public static function get_instance() {
 
@@ -194,7 +200,28 @@ class bbPress_Tender_Importer {
 	}
 
 	public static function find_forum( $link ) {
+		$bits  = explode( '/', $string );
+		$slug  = $bits[4];
+		$forum = str_replace( '-wordpress-theme', '', $slug );
 
+		if ( isset( $forums_cache[ $forum ] ) ) {
+			return $forums_cache[ $forum ];
+		}
+
+		$forum_id = get_posts( 
+					array( 
+						'posts_per_page' => 1, 
+						'post_type'      => bbp_get_forum_post_type(), 
+						'name'           => $forum 
+					) 
+				);
+
+		if ( ! empty( $forum_id ) ) {
+			self::$forums_cache[ $forum ] = $forum_id->ID;
+			return $forum_id->ID;
+		} else {
+			return false;
+		}
 	}
 
 	public static function process_api_response() {
@@ -236,7 +263,7 @@ class bbPress_Tender_Importer {
 		self::process_replies( $topic_id, $discussion, $incrementor );
 	}
 
-	public function process_replies( $topic_id, $discussion, $incrementor ) {
+	public static function process_replies( $topic_id, $discussion, $incrementor ) {
 		$comment_count = $discussion->comments_count;
 
 		$id  = array_pop( explode( '/', $discussion->href ) );
