@@ -162,7 +162,7 @@ class bbPress_Tender_Importer {
 		$topic_meta['topic_id'] = $reply_data['post_parent'];
 		$topic_meta['forum_id'] = get_post_field( 'post_parent', $data['topic_id'], 'db' );
 
-		return bp_insert_reply( $reply_data, $reply_meta );
+		return bbp_insert_reply( $reply_data, $reply_meta );
 	}
 
 	public static function maybe_set_as_private( $reply_id ) {
