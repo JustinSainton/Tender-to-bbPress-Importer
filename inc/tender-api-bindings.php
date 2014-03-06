@@ -19,6 +19,7 @@ class WP_Tender_API {
 
 		$request['headers']['X-Tender-Auth'] = self::get_api_token();
 		$request['headers']['Accept']        = 'application/vnd.tender-v1+json';
+		$request['headers']['Content-Type']  = 'application/json';
 
 		return $request;
 	}
@@ -38,7 +39,7 @@ class WP_Tender_API {
 
 	public static function get_tender_base() {
 
-		/* Likely the easiest way for folks to go, just add define( 'TENDER_API_BASE', 'https://api.tenderapp.com/okaythemes/' ); to wp-config.php */
+		/* Likely the easiest way for folks to go, just add define( 'TENDER_API_BASE', 'URL' ); to wp-config.php */
 		if ( defined( 'TENDER_API_BASE' ) ) {
 			$token = TENDER_API_BASE;
 		} else {
@@ -49,7 +50,12 @@ class WP_Tender_API {
 		return apply_filters( 'wp_tender_api_base', $url );
 	}
 
-	private static function _request( $base = '/' ) {
+	public static function get_discussions( $args = array() ) {
+		return self::_request( '/discussions', $args )
+	}
 
+	private static function _request( $endpoint = '/', $args = array() ) {
+
+		return wp_remote_get( esc_url_raw( path_join( self::get_tender_base(), $endpoint ) ), array( 'body' => json_encode( $args ) ) );
 	}
 }

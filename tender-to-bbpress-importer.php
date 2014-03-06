@@ -50,6 +50,7 @@ class bbPress_Tender_Importer {
 			self::$instance->includes();
 			self::$instance->load_textdomain();
 			self::$instance->api = new WP_Tender_API();
+
 			self::$instance->setup_actions();
 			self::$instance->setup_filters();
 		}
@@ -59,9 +60,14 @@ class bbPress_Tender_Importer {
 
 	public static function setup_constants() {
 
+		/* Sets constants for API key and base for local work, ignored by GitHub */
+		if ( file_exists( BBP_TENDER_PLUGIN_DIR . 'inc/client.local.php' ) ) {
+			require_once BBP_TENDER_PLUGIN_DIR . 'inc/client.local.php';
+		}
+
 		// Plugin version
 		if ( ! defined( 'BBP_TENDER_VERSION' ) ) {
-			define( 'BBP_TENDER_VERSION', '1.9.5' );
+			define( 'BBP_TENDER_VERSION', '0.7' );
 		}
 
 		// Plugin Folder Path
@@ -82,11 +88,6 @@ class bbPress_Tender_Importer {
 	}
 
 	public static function includes() {
-		/* Sets constants for API key and base for local work, ignored by GitHub */
-		if ( file_exists( BBP_TENDER_PLUGIN_DIR . 'inc/client.local.php' ) ) {
-			require_once BBP_TENDER_PLUGIN_DIR . 'inc/client.local.php';
-		}
-
 		require_once BBP_TENDER_PLUGIN_DIR . 'inc/tender-api-bindings.php';
 	}
 
