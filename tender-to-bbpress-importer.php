@@ -129,8 +129,9 @@ class bbPress_Tender_Importer {
 	}
 
 	public static function setup_actions() {
-		add_action( 'admin_notices', array( self::$instance, 'admin_notice' ) );
-		add_action( 'admin_init'   , array( self::$instance, 'shutdown' ) );	
+		add_action( 'admin_notices' , array( self::$instance, 'admin_notice' ) );
+		add_action( 'admin_init'    , array( self::$instance, 'shutdown' ) );
+		add_action( 'wp_insert_post', array( self::$instance, 'remove_pending_status' ) ), 15, 2 );
 	}
 
 	public static function setup_filters() {
@@ -348,6 +349,17 @@ class bbPress_Tender_Importer {
 		}
 
 		self::process_api_response();
+	}
+
+	public static function remove_pending_status( $topic_id, $topic ) {
+		if ( ! bbp_get_topic_post_type() === $topic->post_type ) {
+			return;
+		}
+
+		if ( has_action( 'wp_insert_post', 'edd_bbp_add_topic_meta' ) ) {
+			delete_post_meta( $topic_id, '_bbps_topic_pending' );
+		}
+
 	}
 
 }
