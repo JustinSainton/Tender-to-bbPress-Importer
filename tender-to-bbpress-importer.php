@@ -251,6 +251,14 @@ class bbPress_Tender_Importer {
 	}
 
 	public static function process_discussion( $discussion, $incrementor ) {
+
+		global $wpdb;
+		
+		/* Add a direct query check for the title */
+		if ( $wpdb->get_var( $wpdb->prepare( 'SELECT ID FROM ' . $wpdb->posts . ' WHERE post_type = %s AND post_title = %s', bbp_get_topic_post_type(), $discussion->title ) ) ) {
+			return;
+		}
+
 		$data = array();
 
 		$data['link']  = esc_url_raw( $discussion->html_href );
