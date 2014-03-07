@@ -131,7 +131,6 @@ class bbPress_Tender_Importer {
 	public static function setup_actions() {
 		add_action( 'admin_notices' , array( self::$instance, 'admin_notice' ) );
 		add_action( 'admin_init'    , array( self::$instance, 'shutdown' ) );
-		add_action( 'wp_insert_post', array( self::$instance, 'remove_pending_status' ) ), 15, 2 );
 	}
 
 	public static function setup_filters() {
@@ -266,7 +265,11 @@ class bbPress_Tender_Importer {
 		$data['email'] = is_email( $discussion->author_email ) ? sanitize_email( $discussion->author_email ) : '';
 		$data['title'] = sanitize_text_field( $discussion->title );
 
+		add_action( 'wp_insert_post', array( self::$instance, 'remove_pending_status' ) ), 15, 2 );
+
 		$topic_id = self::insert_topic( $data );
+
+		remove_action( 'wp_insert_post', array( self::$instance, 'remove_pending_status' ) ), 15, 2 );
 		
 		self::maybe_set_as_resolved( $topic_id );
 
