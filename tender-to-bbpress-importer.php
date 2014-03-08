@@ -145,6 +145,7 @@ class bbPress_Tender_Importer {
 		$topic_data['post_author']  = self::find_user( $data['email'] );
 		$topic_data['post_content'] = ''; // We circle back to this in the first reply.
 		$topic_data['post_title']   = $data['title'];
+		$topic_data['post_date']    = $data['date'];
 
 		$topic_meta['forum_id'] = $topic_data['post_parent'];
 
@@ -158,6 +159,8 @@ class bbPress_Tender_Importer {
 		$reply_data['post_author']  = self::find_user( $data['email'] );
 		$reply_data['post_content'] = $data['content'];
 		$reply_data['post_title']   = $data['title'];
+		$reply_data['post_date']    = $data['date'];
+		$reply_data['post_content_filtered'] = $data['filtered_content'];
 
 		$reply_meta['topic_id'] = $reply_data['post_parent'];
 		$reply_meta['forum_id'] = get_post_field( 'post_parent', $data['topic_id'], 'db' );
@@ -264,16 +267,26 @@ class bbPress_Tender_Importer {
 		$data['link']  = esc_url_raw( $discussion->html_href );
 		$data['email'] = is_email( $discussion->author_email ) ? sanitize_email( $discussion->author_email ) : '';
 		$data['title'] = sanitize_text_field( $discussion->title );
+		$data['date']  = date( 'Y-m-d H:i:s', strtotime( $discussion->created_at ) );
 
-		add_action( 'wp_insert_post', array( self::$instance, 'remove_pending_status' ) ), 15, 2 );
+		add_action( 'wp_insert_post', array( self::$instance, 'remove_pending_status' ), 15, 2 );
 
 		$topic_id = self::insert_topic( $data );
 
-		remove_action( 'wp_insert_post', array( self::$instance, 'remove_pending_status' ) ), 15, 2 );
+		remove_action( 'wp_insert_post', array( self::$instance, 'remove_pending_status' ), 15, 2 );
 		
 		self::maybe_set_as_resolved( $topic_id );
 
 		self::process_replies( $topic_id, $discussion, $incrementor );
+
+		self::reset_topic_last_active_time( $topic_id, $discussion->last_updated_at );
+	}
+
+	public static function reset_topic_last_active_time( $topic_id, $time ) {
+
+		$time = date( 'Y-m-d H:i:s', strtotime( $time ) );
+
+		return bbp_update_topic_last_active_time( $topic_id, $time );
 	}
 
 	public static function process_replies( $topic_id, $discussion, $incrementor ) {
@@ -292,7 +305,14 @@ class bbPress_Tender_Importer {
 
 			/* If we're on the first comment, set as the content for the topic ID and continue */
 			if ( 0 === $i ) {
-				wp_update_post( array( 'ID' => $topic_id, 'post_content' => wp_kses_post( $response->comments[ $i ]->body ) ) );
+				wp_update_post( 
+					array(
+					 'ID'           => $topic_id, 
+					 'post_content' => wp_kses_post( $response->comments[ $i ]->body ),
+					 'post_content_filtered' => wp_kses_post( $response->comments[ $i ]->formatted_body ),
+					 'post_date' => date( 'Y-m-d H:i:s', strtotime( $response->comments[ $i ]->created_at ) )
+					) 
+				);
 				continue;
 			}
 
@@ -303,6 +323,9 @@ class bbPress_Tender_Importer {
 			$data['email']    = is_email( $response->comments[ $i ]->author_email ) ? sanitize_email( $response->comments[ $i ]->author_email ) : '';
 			$data['content']  = wp_kses_post( $response->comments[ $i ]->body );
 			$data['title']    = apply_filters( 'bbpress_tender_import_reply_title',  'Reply To: ' . sanitize_text_field( $response->title ), $response, $topic_id );
+			$data['date']     = date( 'Y-m-d H:i:s', strtotime( $response->comments[ $i ]->created_at ) );
+
+			$data['filtered_content'] = $response->comments[ $i ]->formatted_body;
 
 			$reply_id = self::insert_reply( $data );
 
